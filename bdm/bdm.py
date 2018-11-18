@@ -7,11 +7,25 @@ approximating algorithmic complexity of given datasets.
 Configuration step is necessary for specifying dimensionality of allowed
 datasets as well as boundary conditions for block decomposition etc.
 """
-from .boundary import leftover
+import pickle
+from pkg_resources import resource_stream
+from .stages import split_simple, apply_simple, combine_simple
+
+
+_ndim2shape = {
+    1: (12, ),
+    2: (4, 4)
+}
+_ndim2ctm = {
+    1: 'ctm-bin-1d.pickle',
+    2: 'ctm-bin-2d.pickle'
+}
 
 
 class BDM:
-    """Block decomposition method depends on the type data
+    """Block decomposition method interface.
+
+    Block decomposition method depends on the type data
     (binary sequences or matrices) as well as boundary conditions.
 
     Block decomposition method is implemented using the *split-apply-combine*
@@ -26,43 +40,32 @@ class BDM:
 
     Attributes
     ----------
-    dtype : {'sequence', 'matrix'}
-        Expected type of input datasets.
-    boundary : callable
-        Callable object that implements a proper boundary condition.
-    split : callable or None
-        Splitting function. Use the default method if ``None``.
-    apply : callable or None
-        Apply function. Standard *CTM* value lookup if ``None``.
-    combine : callable or None
-        Combine function. Use the default method if ``None``.
+    ndim : int
+        Number of dimensions. Positive integer.
+    ctm_shape : tuple or None
+        Shape of records in a CTM reference dataset.
+    ctm_dname : str
+        Name of a reference CTM dataset.
+        For now it is mean only for inspection purposes
+        (this attribute should not be set and changed).
+    split : callable
+        Split stage method.
+    apply : callable
+        Apply stage method.
+    combine : callable
+        Combine stage method
     """
-    def __init__(self, dtype, boundary=leftover,
-                 split=None, apply=None, combine=None):
+    def __init__(self, ndim, ctm_shape=None, ctm_dname=None,
+                 split=split_simple, apply=apply_simple, combine=combine_simple):
         """Initialization method."""
-        self.dtype = dtype
-        self.boundary = boundary
-        self._split = split
-        self._apply = apply
-        self._combine = combine
-
-    def split(self, x):
-        """Default partition method."""
-        if self._split:
-            return self._split(x)
-        pass
-
-    def apply(self, x):
-        """Default apply method."""
-        if self._apply:
-            return self._apply(x)
-        pass
-
-    def combine(self, x):
-        """Default combine method."""
-        if self._combine:
-            return self._combine(x)
-        pass
+        self.ndim = ndim
+        self.ctm_shape = _ndim2shape[ndim] if ctm_shape is None else ctm_shape
+        self.ctm_dname = _ndim2ctm[ndim] if ctm_dname is None else ctm_dname
+        with resource_stream(__name__, self.ctm_dname) as stream:
+            self._ctm = pickle.load(stream)
+        self.split = split
+        self.apply = apply
+        self.combine = combine
 
     def complexity(self, x):
         """Approximate complexity of a dataset.
@@ -70,9 +73,14 @@ class BDM:
         Parameters
         ----------
         x : (N, k) array_like
-            Dataset representax as a :py:class:`numpy.ndarray`.
+            Dataset representation as a :py:class:`numpy.ndarray`.
+
+        Returns
+        -------
+        float
+            Approximate algorithmic complexity.
         """
-        parts = self.split(x)
-        parts = self.apply(parts)
-        cmx = self.combine(parts)
+        parts = self.split(x, self.ctm_shape)
+        ctms = self.apply(parts, self._ctm)
+        cmx = self.combine(ctms)
         return cmx
