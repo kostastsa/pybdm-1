@@ -1,5 +1,4 @@
 """Block decomposition stage functions."""
-import numpy as np
 
 
 def partition_ignore_leftover(x, shape):
@@ -12,12 +11,27 @@ def partition_ignore_leftover(x, shape):
     shape : tuple
         Shape of parts.
 
-    Returns
-    -------
-    list
-        Ordered sequence of views of parts of the splitted dataset.
+    Yields
+    ------
+    str
+        String representation of a dataset part.
     """
-    pass
+    if len(shape) != x.ndim:
+        raise AttributeError("Dataset and part shapes are not conformable")
+    shapes = list(zip(x.shape, shape))
+    if all([k == l for k, l in shapes ]):
+        yield x
+    else:
+        for k, shp in enumerate(shapes):
+            n, step = shp
+            if n > step:
+                for i in range(0, n, step):
+                    idx = tuple([
+                        slice(i, i + step) if j == k else slice(None)
+                        for j in range(x.ndim)
+                    ])
+                    yield from partition_ignore_leftover(x[idx], shape)
+                break
 
 def lookup(parts, ctm):
     """Lookup CTM values for parts in a reference dataset.
@@ -29,10 +43,10 @@ def lookup(parts, ctm):
     ctm : dict
         Reference CTM dataset.
 
-    Returns
-    -------
-    ndarray
-        Ordered 1D sequence of CTM values for parts.
+    Yields
+    ------
+    tuple
+        2-tuple with string representatio nof a dataset part and its CTM value.
     """
     pass
 
@@ -43,5 +57,10 @@ def aggregate(ctms):
     ----------
     ctms : sequence
         Ordered 1D sequence of CTM values.
+
+    Returns
+    -------
+    float
+        BDM value.
     """
     pass
