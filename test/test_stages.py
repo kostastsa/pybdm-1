@@ -1,11 +1,11 @@
 """Unit tests for BDM stage functions."""
-# pylint: disable=E1101,W0621
+# pylint: disable=E1101,W0621,W0212
 import os
 import pickle
 import pytest
 import numpy as np
 import bdm.resources
-from bdm.stages import partition_ignore_leftover, lookup
+from bdm.stages import partition_ignore_leftover, lookup, aggregate
 
 
 @pytest.fixture(scope='session')
@@ -31,4 +31,11 @@ def test_partition_ignore_leftover(x, shape, expected):
 ])
 def test_lookup(parts, ctmbin2d, expected):
     output = [ x for x in lookup(parts, ctmbin2d) ]
+    assert output == expected
+
+@pytest.mark.parametrize('ctms,expected', [
+    ([ ('1111-1111-1111-1111', 22.0067) for _ in range(4) ], 22.0067 + np.log2(4))
+])
+def test_aggregate(ctms, expected):
+    output = aggregate(ctms)
     assert output == expected

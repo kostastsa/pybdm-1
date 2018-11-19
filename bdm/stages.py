@@ -80,9 +80,9 @@ def aggregate(ctms):
     """
     counter = Counter()
     for key, ctm in ctms:
-        counter.update((key, ctm))
+        counter.update([ (key, ctm) ])
     bdm = 0
-    for n, key in counter.items():
+    for key, n in counter.items():
         _, ctm = key
         bdm += ctm + np.log2(n)
     return bdm
