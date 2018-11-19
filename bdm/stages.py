@@ -2,7 +2,7 @@
 import numpy as np
 
 
-def split_simple(x, shape):
+def partition_ignore_leftover(x, shape):
     """Split method with ignore leftover boundary condition.
 
     Parameters
@@ -19,7 +19,7 @@ def split_simple(x, shape):
     """
     pass
 
-def apply_simple(parts, ctm):
+def lookup(parts, ctm):
     """Lookup CTM values for parts in a reference dataset.
 
     Parameters
@@ -36,7 +36,7 @@ def apply_simple(parts, ctm):
     """
     pass
 
-def combine_simple(ctms):
+def aggregate(ctms):
     """Combine CTM of parts into BDM value.
 
     Parameters

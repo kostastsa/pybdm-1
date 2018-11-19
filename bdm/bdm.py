@@ -9,7 +9,7 @@ datasets as well as boundary conditions for block decomposition etc.
 """
 import pickle
 from pkg_resources import resource_stream
-from .stages import split_simple, apply_simple, combine_simple
+from .stages import partition_ignore_leftover, lookup, aggregate
 
 
 _ndim2shape = {
@@ -48,24 +48,25 @@ class BDM:
         Name of a reference CTM dataset.
         For now it is mean only for inspection purposes
         (this attribute should not be set and changed).
-    split : callable
-        Split stage method.
-    apply : callable
-        Apply stage method.
-    combine : callable
-        Combine stage method
+    partition : callable
+        Partition stage method.
+    lookup : callable
+        Lookup stage method.
+    aggregate : callable
+        Aggregate stage method
     """
     def __init__(self, ndim, ctm_shape=None, ctm_dname=None,
-                 split=split_simple, apply=apply_simple, combine=combine_simple):
+                 partition_func=partition_ignore_leftover,
+                 lookup_func=lookup, aggregate_func=aggregate):
         """Initialization method."""
         self.ndim = ndim
         self.ctm_shape = _ndim2shape[ndim] if ctm_shape is None else ctm_shape
         self.ctm_dname = _ndim2ctm[ndim] if ctm_dname is None else ctm_dname
         with resource_stream(__name__, self.ctm_dname) as stream:
             self._ctm = pickle.load(stream)
-        self.split = split
-        self.apply = apply
-        self.combine = combine
+        self.partition = partition_func
+        self.lookup = lookup_func
+        self.aggregate = aggregate_func
 
     def complexity(self, x):
         """Approximate complexity of a dataset.
@@ -80,7 +81,7 @@ class BDM:
         float
             Approximate algorithmic complexity.
         """
-        parts = self.split(x, self.ctm_shape)
-        ctms = self.apply(parts, self._ctm)
-        cmx = self.combine(ctms)
+        parts = self.partition(x, self.ctm_shape)
+        ctms = self.lookup(parts, self._ctm)
+        cmx = self.aggregate(ctms)
         return cmx
