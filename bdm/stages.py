@@ -1,4 +1,5 @@
 """Block decomposition stage functions."""
+import numpy as np
 
 
 def partition_ignore_leftover(x, shape):
@@ -33,6 +34,12 @@ def partition_ignore_leftover(x, shape):
                     yield from partition_ignore_leftover(x[idx], shape)
                 break
 
+def _array2str(arr):
+    arr = np.apply_along_axis(''.join, 0, arr)
+    for _ in range(arr.ndim):
+        arr = np.apply_along_axis('-'.join, 0, arr)
+    return str(arr)
+
 def lookup(parts, ctm):
     """Lookup CTM values for parts in a reference dataset.
 
@@ -48,7 +55,14 @@ def lookup(parts, ctm):
     tuple
         2-tuple with string representatio nof a dataset part and its CTM value.
     """
-    pass
+    for part in parts:
+        key = _array2str(part)
+        try:
+            cmx = ctm[key]
+        except KeyError:
+            raise KeyError(f"CTM dataset does not contain object '{key}'")
+        yield key, cmx
+
 
 def aggregate(ctms):
     """Combine CTM of parts into BDM value.
