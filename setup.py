@@ -30,10 +30,10 @@ setup(
     maintainer='Szymon Talaga',
     maintainer_email='stalaga@protonmail.com',
     url='https://github.com/sztal/pybdm',
-    packages=[
-        *find_packages()
-        #'bdm',
-    ],
+    packages=[ 'bdm' ],
+    package_dir={'bdm': 'bdm'},
+    package_data={ 'bdm': ['resources/*.pickle']},
+    include_package_data=True,
     setup_requires=['pytest-runner'],
     tests_require=[
         'pytest',
@@ -44,8 +44,6 @@ setup(
         'coverage'
     ],
     test_suite='tests',
-    package_dir={'bdm': 'bdm'},
-    include_package_data=True,
     install_requires=[
     ],
     license='MIT',
