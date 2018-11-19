@@ -10,6 +10,7 @@ datasets as well as boundary conditions for block decomposition etc.
 import pickle
 from pkg_resources import resource_stream
 from .stages import partition_ignore_leftover, lookup, aggregate
+from .ctmdata import __name__ as ctmdata_path
 
 
 _ndim2shape = {
@@ -62,7 +63,7 @@ class BDM:
         self.ndim = ndim
         self.ctm_shape = _ndim2shape[ndim] if ctm_shape is None else ctm_shape
         self.ctm_dname = _ndim2ctm[ndim] if ctm_dname is None else ctm_dname
-        with resource_stream(__name__, self.ctm_dname) as stream:
+        with resource_stream(ctmdata_path, self.ctm_dname) as stream:
             self._ctm = pickle.load(stream)
         self.partition = partition_func
         self.lookup = lookup_func

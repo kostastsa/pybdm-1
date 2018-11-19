@@ -4,14 +4,14 @@ import os
 import pickle
 import pytest
 import numpy as np
-import bdm.resources
+from bdm.ctmdata import __path__ as ctmdata_path
 from bdm.stages import partition_ignore_leftover, lookup, aggregate
 
 
 @pytest.fixture(scope='session')
 def ctmbin2d():
     """CTM reference dataset for 2D binary matrices."""
-    path = os.path.join(bdm.resources.__path__._path[0], 'ctm-bin-2d.pickle')
+    path = os.path.join(ctmdata_path[0], 'ctm-bin-2d.pickle')
     with open(path, 'rb') as stream:
         return pickle.load(stream)
 
