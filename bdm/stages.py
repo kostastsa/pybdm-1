@@ -1,4 +1,5 @@
 """Block decomposition stage functions."""
+from collections import Counter
 import numpy as np
 
 
@@ -35,7 +36,7 @@ def partition_ignore_leftover(x, shape):
                 break
 
 def _array2str(arr):
-    arr = np.apply_along_axis(''.join, 0, arr)
+    arr = np.apply_along_axis(''.join, 0, arr.astype(str))
     for _ in range(arr.ndim):
         arr = np.apply_along_axis('-'.join, 0, arr)
     return str(arr)
@@ -69,12 +70,19 @@ def aggregate(ctms):
 
     Parameters
     ----------
-    ctms : sequence
-        Ordered 1D sequence of CTM values.
+    ctms : sequence of 2-tuples
+        Ordered 1D sequence of string keys and CTM values.
 
     Returns
     -------
     float
         BDM value.
     """
-    pass
+    counter = Counter()
+    for key, ctm in ctms:
+        counter.update((key, ctm))
+    bdm = 0
+    for n, key in counter.items():
+        _, ctm = key
+        bdm += ctm + np.log2(n)
+    return bdm
