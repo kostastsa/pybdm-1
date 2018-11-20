@@ -39,6 +39,20 @@ def encode_sequence(seq, base=2):
             code += x * base**i
     return code
 
+def encode_array(x, base=2, **kwds):
+    """Encode array of integer-symbols.
+
+    Parameters
+    ----------
+    x : (N, k) array_like
+        Array of integer symbols.
+    base : int
+        Encoding base.
+    **kwds :
+        Keyword arguments passed to :py:func:`numpy.ravel`.
+    """
+    seq = np.ravel(x, **kwds)
+    return encode_sequence(seq, base=base)
 
 def decode_sequence(code, base=2, min_length=None):
     """Decode sequence from a sequence code.
@@ -59,3 +73,24 @@ def decode_sequence(code, base=2, min_length=None):
     if min_length and n < min_length:
         bits += [ 0 for _ in range(min_length - n) ]
     return np.array(bits)
+
+def decode_array(code, shape, base=2, **kwds):
+    """Decode array of integer-symbols from a sequence code.
+
+    Parameters
+    ----------
+    code : int
+        Non-negative integer.
+    shape : tuple of ints
+        Expected array shape.
+    base : int
+        Encoding base.
+    **kwds :
+        Keyword arguments passed to :py:func:`numpy.reshape`.
+    """
+    length = np.multiply.reduce(shape)
+    seq = decode_sequence(code, base=base, min_length=length)
+    if seq.size > length:
+        raise ValueError(f"{code} does not encode array of shape {shape}")
+    arr = seq.reshape(shape, **kwds)
+    return arr
