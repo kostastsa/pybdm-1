@@ -18,8 +18,8 @@ _ndim2shape = {
     2: (4, 4)
 }
 _ndim2ctm = {
-    1: 'ctm-bin-1d.pickle',
-    2: 'ctm-bin-2d.pickle'
+    1: 'ctm-b2-d12.pickle',
+    2: 'ctm-b2-d4x4.pickle'
 }
 
 

@@ -1,6 +1,7 @@
 """Block decomposition stage functions."""
 from collections import Counter
 import numpy as np
+from .encoding import encode_array
 
 
 def partition_ignore_leftover(x, shape):
@@ -35,12 +36,6 @@ def partition_ignore_leftover(x, shape):
                     yield from partition_ignore_leftover(x[idx], shape)
                 break
 
-def _array2str(arr):
-    arr = np.apply_along_axis(''.join, 0, arr.astype(str))
-    for _ in range(arr.ndim):
-        arr = np.apply_along_axis('-'.join, 0, arr)
-    return str(arr)
-
 def lookup(parts, ctm):
     """Lookup CTM values for parts in a reference dataset.
 
@@ -57,12 +52,12 @@ def lookup(parts, ctm):
         2-tuple with string representatio nof a dataset part and its CTM value.
     """
     for part in parts:
-        key = _array2str(part)
+        code = encode_array(part)
         try:
-            cmx = ctm[key]
+            cmx = ctm[code]
         except KeyError:
-            raise KeyError(f"CTM dataset does not contain object '{key}'")
-        yield key, cmx
+            raise KeyError(f"CTM dataset does not contain object code '{code}'")
+        yield code, cmx
 
 
 def aggregate(ctms):
@@ -79,8 +74,8 @@ def aggregate(ctms):
         BDM value.
     """
     counter = Counter()
-    for key, ctm in ctms:
-        counter.update([ (key, ctm) ])
+    for code, ctm in ctms:
+        counter.update([ (code, ctm) ])
     bdm = 0
     for key, n in counter.items():
         _, ctm = key
