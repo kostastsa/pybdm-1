@@ -38,7 +38,7 @@ def partition_ignore_leftover(x, shape):
                     yield from partition_ignore_leftover(x[idx], shape)
                 break
 
-def lookup(parts, ctm):
+def lookup(parts, ctm, base=2):
     """Lookup CTM values for parts in a reference dataset.
 
     Parameters
@@ -47,6 +47,8 @@ def lookup(parts, ctm):
         Ordered sequence of dataset parts.
     ctm : dict
         Reference CTM dataset.
+    base : int
+        Encoding base. Greater or equal to 2.
 
     Yields
     ------
@@ -54,7 +56,7 @@ def lookup(parts, ctm):
         2-tuple with string representatio nof a dataset part and its CTM value.
     """
     for part in parts:
-        code = encode_array(part)
+        code = encode_array(part, base=base)
         try:
             cmx = ctm[code]
         except KeyError:

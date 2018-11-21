@@ -2,7 +2,7 @@
 # pylint: disable=W0621
 import os
 import pytest
-from bdm.utils import array_from_string
+from bdm.encoding import array_from_string
 
 _dirpath = os.path.join(os.path.split(__file__)[0], 'data')
 # Get test input data and expected values

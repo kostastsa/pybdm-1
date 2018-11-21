@@ -5,7 +5,8 @@ of a block decomposition method as well as running actual computations
 approximating algorithmic complexity of given datasets.
 
 Configuration step is necessary for specifying dimensionality of allowed
-datasets as well as boundary conditions for block decomposition etc.
+datasets, encoding of reference CTM data as well as
+boundary conditions for block decomposition etc.
 """
 import pickle
 from pkg_resources import resource_stream
@@ -26,8 +27,10 @@ _ndim_to_ctm = {
 class BDM:
     """Block decomposition method interface.
 
-    Block decomposition method depends on the type data
-    (binary sequences or matrices) as well as boundary conditions.
+    Block decomposition method depends on the dimensionality of data
+    and the length of the symbols alphabet which determines base for encoding
+    of reference CTM data. Binary data is encoded in base 2, 3-symbols alphabets
+    in base 3 and so forth.
 
     Block decomposition method is implemented using the *split-apply-combine*
     pipeline approach. First a dataset is partitioned into parts with dimensions
@@ -39,10 +42,17 @@ class BDM:
     so every step can be customized during the configuration of a `BDM` object
     or by subclassing.
 
+    Notes
+    -----
+    Currently CTM reference datasets are computed only for binary sequences
+    of length up to 12 and binary 4-by-4 binary matrices.
+
     Attributes
     ----------
     ndim : int
         Number of dimensions. Positive integer.
+    base : int
+        Base for encoding of CTM data. Greater or equal to 2.
     ctm_shape : tuple or None
         Shape of records in a CTM reference dataset.
     ctm_dname : str
@@ -56,11 +66,12 @@ class BDM:
     aggregate : callable
         Aggregate stage method
     """
-    def __init__(self, ndim, ctm_shape=None, ctm_dname=None,
+    def __init__(self, ndim, base=2, ctm_shape=None, ctm_dname=None,
                  partition_func=partition_ignore_leftover,
                  lookup_func=lookup, aggregate_func=aggregate):
         """Initialization method."""
         self.ndim = ndim
+        self.base = base
         self.ctm_shape = _ndim_to_shape[ndim] if ctm_shape is None else ctm_shape
         self.ctm_dname = _ndim_to_ctm[ndim] if ctm_dname is None else ctm_dname
         with resource_stream(ctmdata_path, self.ctm_dname) as stream:
@@ -83,6 +94,6 @@ class BDM:
             Approximate algorithmic complexity.
         """
         parts = self.partition(x, self.ctm_shape)
-        ctms = self.lookup(parts, self._ctm)
+        ctms = self.lookup(parts, self._ctm, base=self.base)
         cmx = self.aggregate(ctms)
         return cmx
