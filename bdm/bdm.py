@@ -13,11 +13,11 @@ from .stages import partition_ignore_leftover, lookup, aggregate
 from .ctmdata import __name__ as ctmdata_path
 
 
-_ndim2shape = {
+_ndim_to_shape = {
     1: (12, ),
     2: (4, 4)
 }
-_ndim2ctm = {
+_ndim_to_ctm = {
     1: 'ctm-b2-d12.pickle',
     2: 'ctm-b2-d4x4.pickle'
 }
@@ -61,8 +61,8 @@ class BDM:
                  lookup_func=lookup, aggregate_func=aggregate):
         """Initialization method."""
         self.ndim = ndim
-        self.ctm_shape = _ndim2shape[ndim] if ctm_shape is None else ctm_shape
-        self.ctm_dname = _ndim2ctm[ndim] if ctm_dname is None else ctm_dname
+        self.ctm_shape = _ndim_to_shape[ndim] if ctm_shape is None else ctm_shape
+        self.ctm_dname = _ndim_to_ctm[ndim] if ctm_dname is None else ctm_dname
         with resource_stream(ctmdata_path, self.ctm_dname) as stream:
             self._ctm = pickle.load(stream)
         self.partition = partition_func

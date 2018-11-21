@@ -1,6 +1,11 @@
 """Utility functions."""
 import numpy as np
+from . import _ctm_datasets
 
+
+def list_ctm_datasets():
+    """Get a list of available precomputed CTM datasets."""
+    return _ctm_datasets
 
 def array_from_string(x, sep='-', cast_to=int):
     """Make array from string representation.
