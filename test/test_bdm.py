@@ -17,13 +17,25 @@ with open(os.path.join(_dirpath, 'bdm-b2-d4x4-test-input.tsv'), 'r') as stream:
 
 
 @pytest.fixture(scope='session')
-def bdmobj():
+def bdm_d1():
+    return BDM(ndim=1)
+
+@pytest.fixture(scope='session')
+def bdm_d2():
     return BDM(ndim=2)
 
 
 class TestBDM:
 
+    @pytest.mark.parametrize('x,expected', [
+        (array_from_string('000000000000'), 25.6104137476417),
+        (array_from_string('000000000001'), 27.0456508612662)
+    ])
+    def test_complexity_d1(self, bdm_d1, x, expected):
+        output = bdm_d1.complexity(x)
+        assert output == expected
+
     @pytest.mark.parametrize('x,expected', bdm_test_input)
-    def test_complexity(self, bdmobj, x, expected):
-        output = bdmobj.complexity(x)
+    def test_complexity_d2(self, bdm_d2, x, expected):
+        output = bdm_d2.complexity(x)
         assert output == expected

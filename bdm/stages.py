@@ -20,6 +20,8 @@ def partition_ignore_leftover(x, shape):
         String representation of a dataset part.
     """
     if len(shape) != x.ndim:
+        x = x.squeeze()
+    if len(shape) != x.ndim:
         raise AttributeError("Dataset and part shapes are not conformable")
     shapes = list(zip(x.shape, shape))
     if all([k == l for k, l in shapes ]):
