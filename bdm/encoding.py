@@ -23,7 +23,9 @@ def array_from_string(x, sep='-', cast_to=int):
     cast_to : type or None
         Cast array to given type. No casting if ``None``.
     """
-    arr = np.array([ x for x in map(list, x.split(sep)) ])
+    arr = np.array([ x for x in map(list, x.split(sep)) ]).squeeze()
+    if arr.ndim == 0:
+        arr = arr.reshape((1, ))
     if cast_to:
         arr = arr.astype(cast_to)
     return arr

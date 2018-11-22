@@ -83,13 +83,16 @@ class BDM:
         self.lookup = lookup_func
         self.aggregate = aggregate_func
 
-    def complexity(self, x):
+    def complexity(self, x, raise_if_zero=True):
         """Approximate complexity of a dataset.
 
         Parameters
         ----------
         x : (N, k) array_like
             Dataset representation as a :py:class:`numpy.ndarray`.
+        raise_if_zero: bool
+            Should error be raised if BDM value is zero.
+            Zero value indicates that the dataset could have incorrect dimensions.
 
         Returns
         -------
@@ -99,4 +102,6 @@ class BDM:
         parts = self.partition(x, self.ctm_shape)
         ctms = self.lookup(parts, self._ctm)
         cmx = self.aggregate(ctms)
+        if raise_if_zero and cmx == 0:
+            raise ValueError("Computed BDM is 0, dataset may have incorrect dimensions")
         return cmx
