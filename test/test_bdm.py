@@ -18,8 +18,8 @@ with open(os.path.join(_dirpath, 'bdm-b2-d4x4-test-input.tsv'), 'r') as stream:
 class TestBDM:
 
     @pytest.mark.parametrize('x,expected', [
-        (array_from_string('000000000000'), 25.6104137476417),
-        (array_from_string('000000000001'), 27.0456508612662)
+        (array_from_string('1'), 0.175035961691245),
+        (array_from_string('10'), 0.0996187277370206)
     ])
     def test_complexity_d1(self, bdm_d1, x, expected):
         output = bdm_d1.complexity(x)

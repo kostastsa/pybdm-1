@@ -97,6 +97,6 @@ class BDM:
             Approximate algorithmic complexity.
         """
         parts = self.partition(x, self.ctm_shape)
-        ctms = self.lookup(parts, self._ctm, base=self.base)
+        ctms = self.lookup(parts, self._ctm)
         cmx = self.aggregate(ctms)
         return cmx

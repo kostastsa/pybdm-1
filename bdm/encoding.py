@@ -11,16 +11,6 @@ from collections import deque
 import numpy as np
 
 
-def trim_sequence_string(x):
-    """Trim leading zeros from a sequence string.
-
-    Parameters
-    ----------
-    x : str
-        Sequence string.
-    """
-    return x.lstrip('0')
-
 def array_from_string(x, sep='-', cast_to=int):
     """Make array from string representation.
 
@@ -90,6 +80,9 @@ def decode_sequence(code, base=2, min_length=None):
     base : int
         Encoding base.
         Should be equal to the number of unique symbols in the alphabet.
+    min_length : int or None
+        Minimal number of represented bits.
+        Use shortest representation if ``None``.
     """
     bits = deque()
     while code > 0:
@@ -100,6 +93,33 @@ def decode_sequence(code, base=2, min_length=None):
         for _ in range(min_length - n):
             bits.appendleft(0)
     return np.array(bits)
+
+def encode_string(x, base=2):
+    """Encode sequence-string to integer code.
+
+    Parameters
+    ----------
+    x : str
+        Sequence string.
+    Base : int
+        Encoding base.
+    """
+    return encode_array(array_from_string(x), base=base)
+
+def decode_string(code, shape, base=2):
+    """Decode sequence-string from an integer code.
+
+    Parameters
+    ----------
+    code : int
+        Non-negative integer.
+    base : int
+        Encoding base.
+    min_length : int or None
+        Minimal number of represented bits.
+        Use shortest representation if ``None``.
+    """
+    return string_from_array(decode_array(code, shape, base=base))
 
 def encode_array(x, base=2, **kwds):
     """Encode array of integer-symbols.

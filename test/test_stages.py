@@ -6,6 +6,7 @@ import pytest
 import numpy as np
 from bdm.ctmdata import __path__ as ctmdata_path
 from bdm.stages import partition_ignore, lookup, aggregate
+from bdm.encoding import decode_string as dec
 
 
 @pytest.fixture(scope='session')
@@ -27,7 +28,7 @@ def test_partition_ignore(x, shape, expected):
     assert all([ (o == e).all() for o, e in zip(output, expected) ])
 
 @pytest.mark.parametrize('parts,expected', [
-    ([ np.ones((4, 4)).astype(int) ], [ (65535, 22.0067) ]),
+    ([ np.ones((4, 4)).astype(int) ], [ (dec(65535, (4, 4)), 22.006706292292176) ]),
 ])
 def test_lookup(parts, ctmbin2d, expected):
     output = [ x for x in lookup(parts, ctmbin2d) ]

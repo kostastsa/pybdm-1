@@ -20,7 +20,11 @@ def partition_ignore(x, shape):
         Dataset parts.
     """
     if len(shape) != x.ndim:
-        x = x.squeeze()
+        if all([ d == 1 for d in x.shape ]):
+            axes = tuple(range(len(shape), x.ndim))
+            x = x.squeeze(axes)
+        else:
+            x = x.squeeze()
     if len(shape) != x.ndim:
         raise AttributeError("Dataset and part shapes are not conformable")
     shapes = list(zip(x.shape, shape))
