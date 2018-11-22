@@ -5,7 +5,7 @@ import pickle
 import pytest
 import numpy as np
 from bdm.ctmdata import __path__ as ctmdata_path
-from bdm.stages import partition_ignore, lookup, aggregate
+from bdm.stages import partition, lookup, aggregate
 from bdm.encoding import decode_string as dec
 
 
@@ -17,15 +17,18 @@ def ctmbin2d():
         return pickle.load(stream)
 
 
-@pytest.mark.parametrize('x,shape,expected', [
-    (np.ones((2, 2)), (2, 2), [ np.ones((2, 2)) ]),
-    (np.ones((5, 5)), (2, 2), [
+@pytest.mark.parametrize('x,shape,shift,expected', [
+    (np.ones((2, 2)), (2, 2), 0, [ np.ones((2, 2)) ]),
+    (np.ones((5, 5)), (4, 4), 0, [
+        np.ones((4, 4)), np.ones((4, 1)), np.ones((1, 4)), np.ones((1, 1))
+    ]),
+    (np.ones((3, 3)), (2, 2), 1, [
         np.ones((2, 2)), np.ones((2, 2)), np.ones((2, 2)), np.ones((2, 2))
     ])
 ])
-def test_partition_ignore(x, shape, expected):
-    output = [ x for x in partition_ignore(x, shape) ]
-    assert all([ (o == e).all() for o, e in zip(output, expected) ])
+def test_partition(x, shape, shift, expected):
+    output = [ p for p in partition(x, shape, shift=shift) ]
+    assert all([ np.array_equal(o, e) for o, e in zip(output, expected) ])
 
 @pytest.mark.parametrize('parts,expected', [
     ([ np.ones((4, 4)).astype(int) ], [ (dec(65535, (4, 4)), 22.006706292292176) ]),

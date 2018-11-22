@@ -4,7 +4,7 @@ import numpy as np
 from .encoding import string_from_array
 
 
-def partition(x, shape, step=None):
+def partition(x, shape, shift=0):
     """General dataset partition function.
 
     Parameters
@@ -13,6 +13,9 @@ def partition(x, shape, step=None):
         Dataset.
     shape : tuple
         Shape of parts.
+    shift : int
+        Shift of the sliding window.
+        Shift by partition shape if not positive.
 
     Yields
     ------
@@ -20,26 +23,27 @@ def partition(x, shape, step=None):
         Dataset parts.
     """
     if len(set(shape)) != 1:
-        raise AttributeError(f"Partition shape has to be symmetric not {shape}")
+        raise AttributeError(f"Partition shape is not symmetric {shape}")
     if len(shape) != x.ndim:
         x = x.squeeze()
     if len(shape) != x.ndim:
         raise AttributeError("Dataset and part shapes are not conformable")
-    if not step:
-        step = shape[0]
     shapes = list(zip(x.shape, shape))
     if all([k <= l for k, l in shapes ]):
         yield x
     else:
         for k, shp in enumerate(shapes):
             n, step = shp
+            if shift <= 0:
+                shift = step
             if n > step:
-                for i in range(0, n, step):
+                end = n - step + 1
+                for i in range(0, end, shift):
                     idx = tuple([
                         slice(i, i + step) if j == k else slice(None)
                         for j in range(x.ndim)
                     ])
-                    yield from partition(x[idx], shape)
+                    yield from partition(x[idx], shape, shift=shift)
                 break
 
 def partition_ignore(x, shape):
