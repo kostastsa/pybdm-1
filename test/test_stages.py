@@ -5,7 +5,7 @@ import pickle
 import pytest
 import numpy as np
 from bdm.ctmdata import __path__ as ctmdata_path
-from bdm.stages import partition_ignore_leftover, lookup, aggregate
+from bdm.stages import partition_ignore, lookup, aggregate
 
 
 @pytest.fixture(scope='session')
@@ -22,8 +22,8 @@ def ctmbin2d():
         np.ones((2, 2)), np.ones((2, 2)), np.ones((2, 2)), np.ones((2, 2))
     ])
 ])
-def test_partition_ignore_leftover(x, shape, expected):
-    output = [ x for x in partition_ignore_leftover(x, shape) ]
+def test_partition_ignore(x, shape, expected):
+    output = [ x for x in partition_ignore(x, shape) ]
     assert all([ (o == e).all() for o, e in zip(output, expected) ])
 
 @pytest.mark.parametrize('parts,expected', [

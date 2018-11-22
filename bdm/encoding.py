@@ -11,6 +11,16 @@ from collections import deque
 import numpy as np
 
 
+def trim_sequence_string(x):
+    """Trim leading zeros from a sequence string.
+
+    Parameters
+    ----------
+    x : str
+        Sequence string.
+    """
+    return x.lstrip('0')
+
 def array_from_string(x, sep='-', cast_to=int):
     """Make array from string representation.
 

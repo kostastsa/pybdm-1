@@ -1,10 +1,10 @@
 """Block decomposition stage functions."""
 from collections import Counter
 import numpy as np
-from .encoding import encode_array
+from .encoding import string_from_array
 
 
-def partition_ignore_leftover(x, shape):
+def partition_ignore(x, shape):
     """Split method with ignore leftover boundary condition.
 
     Parameters
@@ -16,8 +16,8 @@ def partition_ignore_leftover(x, shape):
 
     Yields
     ------
-    str
-        String representation of a dataset part.
+    array_like
+        Dataset parts.
     """
     if len(shape) != x.ndim:
         x = x.squeeze()
@@ -35,10 +35,10 @@ def partition_ignore_leftover(x, shape):
                         slice(i, i + step) if j == k else slice(None)
                         for j in range(x.ndim)
                     ])
-                    yield from partition_ignore_leftover(x[idx], shape)
+                    yield from partition_ignore(x[idx], shape)
                 break
 
-def lookup(parts, ctm, base=2):
+def lookup(parts, ctm):
     """Lookup CTM values for parts in a reference dataset.
 
     Parameters
@@ -47,21 +47,19 @@ def lookup(parts, ctm, base=2):
         Ordered sequence of dataset parts.
     ctm : dict
         Reference CTM dataset.
-    base : int
-        Encoding base. Greater or equal to 2.
 
     Yields
     ------
     tuple
-        2-tuple with string representatio nof a dataset part and its CTM value.
+        2-tuple with string representation of a dataset part and its CTM value.
     """
     for part in parts:
-        code = encode_array(part, base=base)
+        key = string_from_array(part)
         try:
-            cmx = ctm[code]
+            cmx = ctm[key]
         except KeyError:
-            raise KeyError(f"CTM dataset does not contain object code '{code}'")
-        yield code, cmx
+            raise KeyError(f"CTM dataset does not contain object '{key}'")
+        yield key, cmx
 
 
 def aggregate(ctms):
@@ -78,8 +76,8 @@ def aggregate(ctms):
         BDM value.
     """
     counter = Counter()
-    for code, ctm in ctms:
-        counter.update([ (code, ctm) ])
+    for key, ctm in ctms:
+        counter.update([ (key, ctm) ])
     bdm = 0
     for key, n in counter.items():
         _, ctm = key

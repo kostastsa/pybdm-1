@@ -10,7 +10,7 @@ boundary conditions for block decomposition etc.
 """
 import pickle
 from pkg_resources import resource_stream
-from .stages import partition_ignore_leftover, lookup, aggregate
+from .stages import partition_ignore, lookup, aggregate
 from .ctmdata import __name__ as ctmdata_path
 
 
@@ -53,8 +53,8 @@ class BDM:
         Number of dimensions. Positive integer.
     base : int
         Base for encoding of CTM data. Greater or equal to 2.
-    ctm_shape : tuple or None
-        Shape of records in a CTM reference dataset.
+    ctm_width : int or None
+        Width of the sliding window and CTM records.
     ctm_dname : str
         Name of a reference CTM dataset.
         For now it is mean only for inspection purposes
@@ -66,13 +66,16 @@ class BDM:
     aggregate : callable
         Aggregate stage method
     """
-    def __init__(self, ndim, base=2, ctm_shape=None, ctm_dname=None,
-                 partition_func=partition_ignore_leftover,
+    def __init__(self, ndim, base=2, ctm_width=None, ctm_dname=None,
+                 partition_func=partition_ignore,
                  lookup_func=lookup, aggregate_func=aggregate):
         """Initialization method."""
         self.ndim = ndim
         self.base = base
-        self.ctm_shape = _ndim_to_shape[ndim] if ctm_shape is None else ctm_shape
+        if ctm_width is None:
+            self.ctm_shape = _ndim_to_shape[ndim]
+        else:
+            self.ctm_shape = tuple([ ctm_width for _ in range(ndim) ])
         self.ctm_dname = _ndim_to_ctm[ndim] if ctm_dname is None else ctm_dname
         with resource_stream(ctmdata_path, self.ctm_dname) as stream:
             self._ctm = pickle.load(stream)
