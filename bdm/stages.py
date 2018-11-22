@@ -61,7 +61,7 @@ def partition_ignore(x, shape):
     array_like
         Dataset parts.
     """
-    for part in partition(x, shape):
+    for part in partition(x, shape, shift=0):
         if part.shape == shape:
             yield part
 
