@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 from bdm.ctmdata import __path__ as ctmdata_path
 from bdm.stages import partition, lookup, aggregate
-from bdm.stages import partition_ignore
+from bdm.stages import partition_ignore, partition_shrink
 from bdm.encoding import decode_string as dec
 
 
@@ -29,6 +29,7 @@ def ctmbin2d():
 ])
 def test_partition(x, shape, shift, expected):
     output = [ p for p in partition(x, shape, shift=shift) ]
+    assert len(output) == len(expected)
     assert all([ np.array_equal(o, e) for o, e in zip(output, expected) ])
 
 @pytest.mark.parametrize('x,shape,expected', [
@@ -37,7 +38,19 @@ def test_partition(x, shape, shift, expected):
     (np.ones((3, 3)), (2, 2), [ np.ones((2, 2)) ])
 ])
 def test_partition_ignore(x, shape, expected):
-    output = partition_ignore(x, shape)
+    output = [ p for p in partition_ignore(x, shape) ]
+    assert len(output) == len(expected)
+    assert all([ np.array_equal(o, e) for o, e in zip(output, expected) ])
+
+@pytest.mark.parametrize('x,shape,min_width,expected', [
+    (np.ones((2, 2)), (2, 2), 2, [ np.ones((2, 2)) ]),
+    (np.ones((5, 5)), (3, 3), 2, [
+        np.ones((3, 3)), np.ones((2, 2)), np.ones((2, 2)), np.ones((2, 2))
+    ])
+])
+def test_partition_shrink(x, shape, min_width, expected):
+    output = [ p for p in partition_shrink(x, shape, min_width=min_width) ]
+    assert len(output) == len(expected)
     assert all([ np.array_equal(o, e) for o, e in zip(output, expected) ])
 
 @pytest.mark.parametrize('parts,expected', [

@@ -34,11 +34,10 @@ def partition(x, shape, shift=0):
     else:
         for k, shp in enumerate(shapes):
             n, step = shp
-            if shift <= 0:
-                shift = step
+            _shift = step if shift <= 0 else shift
             if n > step:
-                end = n - step + 1
-                for i in range(0, end, shift):
+                end = n - step + 1 if shift > 0 else n
+                for i in range(0, end, _shift):
                     idx = tuple([
                         slice(i, i + step) if j == k else slice(None)
                         for j in range(x.ndim)
@@ -64,6 +63,32 @@ def partition_ignore(x, shape):
     for part in partition(x, shape, shift=0):
         if part.shape == shape:
             yield part
+
+def partition_shrink(x, shape, min_width=2):
+    """Partition with shrinking shape boundary condition.
+
+    Parameters
+    ----------
+    x (N, k) array_like
+        Dataset.
+    shape : tuple
+        Shape of parts.
+    min_width : int
+        Minimal width of parts' shape.
+
+    Yields
+    ------
+    array_like
+        Dataset parts.
+    """
+    for part in partition(x, shape, shift=0):
+        if part.shape == shape:
+            yield part
+        else:
+            part_min_width = min(part.shape)
+            _shape = tuple([ part_min_width for _ in range(len(shape)) ])
+            if part_min_width >= min_width:
+                yield from partition_shrink(part, _shape, min_width=min_width)
 
 def lookup(parts, ctm):
     """Lookup CTM values for parts in a reference dataset.
