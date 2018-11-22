@@ -23,7 +23,11 @@ def array_from_string(x, sep='-', cast_to=int):
     cast_to : type or None
         Cast array to given type. No casting if ``None``.
     """
-    arr = np.array([ x for x in map(list, x.split(sep)) ]).squeeze()
+    if sep in x:
+        arr = [ list(s) for s in x.split(sep) ]
+    else:
+        arr = list(x)
+    arr = np.array(arr)
     if arr.ndim == 0:
         arr = arr.reshape((1, ))
     if cast_to:
@@ -63,8 +67,8 @@ def encode_sequence(seq, base=2):
         raise TypeError("'seq' has to be of integer dtype")
     if not (seq >= 0).all():
         raise ValueError("'seq' has to consist of non-negative integers")
-    proper_valeus = np.arange(base)
-    if not np.isin(seq, proper_valeus).all():
+    proper_values = np.arange(base)
+    if not np.isin(seq, proper_values).all():
         raise ValueError(f"There are symbol codes greater than {base-1}")
     code = 0
     for i, x in enumerate(reversed(seq)):

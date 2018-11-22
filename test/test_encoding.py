@@ -8,6 +8,8 @@ from bdm.encoding import array_from_string, string_from_array
 
 @pytest.mark.parametrize('x,expected', [
     ('', np.array([])),
+    ('1010', np.array([1, 0, 1, 0])),
+    ('1-0', np.array([[1], [0]])),
     ('0000-1000-0101', np.array([[0,0,0,0], [1,0,0,0], [0,1,0,1]]))
 ])
 def test_array_from_string(x, expected):
