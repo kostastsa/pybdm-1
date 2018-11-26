@@ -24,23 +24,26 @@ be wrappers around the core family functions, which accordingly are:
 from collections import Counter
 import numpy as np
 from .encoding import string_from_array
+from .utils import get_reduced_shape, get_reduced_idx
 
 
-def partition(x, shape, shift=0):
-    """Core partition stage function.
-
-    It is implemented as a generator that yields subsequent parts.
+def partition(x, shape, shift=0, reduced_idx=None):
+    """Standard partition stage function.
 
     Parameters
     ----------
     x : array_like
-        Dataset of arbitrary dimensionality represented by a *Numpy* array.
+        Dataset of arbitrary dimensionality represented as a *Numpy* array.
     shape : tuple
-        Shape of parts.
+        Dataset parts' shape.
     shift : int
         Shift of the sliding window.
         In general, if positive, should not be greater than ``1``.
         Shift by partition shape if not positive.
+    reduced_idx : iterable or None
+        Reduced dataset 1D indexes to iterate over.
+        Useful when running partition in parallel.
+        Iterate over all parts if ``None``.
 
     Yields
     ------
@@ -51,7 +54,7 @@ def partition(x, shape, shift=0):
     ------
     AttributeError
         If parts' `shape` is equal in each dimension.
-        If parts' `shape` and dataset's shape are not conformable.
+        If parts' `shape` and dataset's shape have different numbers of axes.
 
     Examples
     --------
@@ -60,30 +63,20 @@ def partition(x, shape, shift=0):
            [1, 1]]), array([[1],
            [1]]), array([[1, 1]]), array([[1]])]
     """
-    if len(set(shape)) != 1:
-        raise AttributeError(f"Partition shape is not symmetric {shape}")
-    if len(shape) != x.ndim:
-        x = x.squeeze()
-    if len(shape) != x.ndim:
-        raise AttributeError("Dataset and part shapes are not conformable")
-    shapes = list(zip(x.shape, shape))
-    if all([k <= l for k, l in shapes ]):
-        yield x
-    else:
-        for k, shp in enumerate(shapes):
-            n, step = shp
-            _shift = step if shift <= 0 else shift
-            if n > step:
-                end = n - step + 1 if shift > 0 else n
-                for i in range(0, end, _shift):
-                    idx = tuple([
-                        slice(i, i + step) if j == k else slice(None)
-                        for j in range(x.ndim)
-                    ])
-                    yield from partition(x[idx], shape, shift=shift)
-                break
+    r_shape = get_reduced_shape(x, shape, length_only=False)
+    n_parts = int(np.multiply.reduce(r_shape))
+    reduced_idx = reduced_idx if reduced_idx else range(n_parts)
+    width = shape[0]
+    _shift = shift if shift > 0 else width
+    for i in reduced_idx:
+        r_idx = get_reduced_idx(i, r_shape)
+        if shift <= 0:
+            idx = tuple(slice(k*width, k*width + _shift) for k in r_idx)
+        else:
+            idx = tuple(slice(k, k + width) for k in r_idx)
+        yield x[idx]
 
-def partition_ignore(x, shape):
+def partition_ignore(x, shape, reduced_idx=None):
     """Partition with ignore leftovers boundary condition.
 
     In this variant parts that can not be further sliced and fitted into
@@ -95,6 +88,10 @@ def partition_ignore(x, shape):
         Dataset of arbitrary dimensionality represented by a *Numpy* array.
     shape : tuple
         Shape of parts.
+    reduced_idx : iterable or None
+        Reduced dataset 1D indexes to iterate over.
+        Useful when running partition in parallel.
+        Iterate over all parts if ``None``.
 
     Yields
     ------
@@ -113,54 +110,13 @@ def partition_ignore(x, shape):
     [array([[1, 1],
            [1, 1]])]
     """
-    for part in partition(x, shape, shift=0):
+    for part in partition(x, shape, shift=0, reduced_idx=reduced_idx):
         if part.shape == shape:
             yield part
 
-def partition_shrink(x, shape, min_width):
-    """Partition with shrinking shape boundary condition.
+# TODO: implement partition_shrink in a non-recursive manner
 
-    Parameters
-    ----------
-    x array_like
-        Dataset of arbitrary dimensionality represented by a *Numpy* array.
-    shape : tuple
-        Shape of parts.
-    min_width : int
-        Minimal width of parts' shape.
-
-    Yields
-    ------
-    array_like
-        Dataset parts.
-
-    Raises
-    ------
-    AttributeError
-        If parts' `shape` is equal in each dimension.
-        If parts' `shape` and dataset's shape are not conformable.
-
-    Examples
-    --------
-    >>> data = np.ones((5, 5), dtype=int)
-    >>> [ x for x in partition_shrink(data, shape=(3, 3), min_width=2)]
-    [array([[1, 1, 1],
-           [1, 1, 1],
-           [1, 1, 1]]), array([[1, 1],
-           [1, 1]]), array([[1, 1],
-           [1, 1]]), array([[1, 1],
-           [1, 1]])]
-    """
-    for part in partition(x, shape, shift=0):
-        if part.shape == shape:
-            yield part
-        else:
-            part_min_width = min(part.shape)
-            _shape = tuple([ part_min_width for _ in range(len(shape)) ])
-            if part_min_width >= min_width:
-                yield from partition_shrink(part, _shape, min_width=min_width)
-
-def lookup(parts, ctm):
+def lookup(parts, ctm, sep='-'):
     """Lookup CTM values for parts in a reference dataset.
 
     Parameters
@@ -169,6 +125,8 @@ def lookup(parts, ctm):
         Ordered sequence of dataset parts.
     ctm : dict
         Reference CTM dataset.
+    sep : str
+        Sequence separator in string codes.
 
     Yields
     ------
@@ -185,14 +143,14 @@ def lookup(parts, ctm):
     >>> from bdm import BDM
     >>> bdm = BDM(ndim=1)
     >>> data = np.ones((16, ), dtype=int)
-    >>> parts = partition_shrink(data, (12, ), min_width=4)
+    >>> parts = partition_ignore(data, (12, ))
     >>> [ x for x in lookup(parts, bdm._ctm) ]
-    [('111111111111', 1.95207842085224e-08), ('1111', 0.00409810315977953)]
+    [('111111111111', 1.95207842085224e-08)]
     """
     for part in parts:
         key = string_from_array(part)
         try:
-            if '-' in key:
+            if sep in key:
                 cmx = ctm[key]
             else:
                 cmx = ctm.get(key, ctm[key.lstrip('0')])
@@ -218,11 +176,11 @@ def aggregate(ctms):
     --------
     >>> from bdm import BDM
     >>> bdm = BDM(ndim=1)
-    >>> data = np.ones((40, ), dtype=int)
-    >>> parts = partition_shrink(data, (12, ), min_width=4)
+    >>> data = np.ones((30, ), dtype=int)
+    >>> parts = partition_ignore(data, (12, ))
     >>> ctms = lookup(parts, bdm._ctm)
     >>> aggregate(ctms)
-    1.5890606234017197
+    1.000000019520784
     """
     counter = Counter()
     for key, ctm in ctms:

@@ -4,9 +4,10 @@ import os
 import pickle
 import pytest
 import numpy as np
+from bdm import BDM
 from bdm.ctmdata import __path__ as ctmdata_path
 from bdm.stages import partition, lookup, aggregate
-from bdm.stages import partition_ignore, partition_shrink
+from bdm.stages import partition_ignore
 from bdm.encoding import decode_string as dec
 
 
@@ -18,17 +19,21 @@ def ctmbin2d():
         return pickle.load(stream)
 
 
-@pytest.mark.parametrize('x,shape,shift,expected', [
-    (np.ones((2, 2)), (2, 2), 0, [ np.ones((2, 2)) ]),
-    (np.ones((5, 5)), (4, 4), 0, [
+@pytest.mark.parametrize('x,shape,shift,reduced_idx,expected', [
+    (np.ones((2, 2)), (2, 2), 0, None, [ np.ones((2, 2)) ]),
+    (np.ones((5, 5)), (4, 4), 0, None, [
         np.ones((4, 4)), np.ones((4, 1)), np.ones((1, 4)), np.ones((1, 1))
     ]),
-    (np.ones((3, 3)), (2, 2), 1, [
-        np.ones((2, 2)), np.ones((2, 2)), np.ones((2, 2)), np.ones((2, 2))
+    (np.array([[1,2,3],[4,5,6],[7,8,9]]), (2, 2), 1, None, [
+        np.array([[1,2],[4,5]]), np.array([[2,3],[5,6]]),
+        np.array([[4,5],[7,8]]), np.array([[5,6],[8,9]])
+    ]),
+    (np.array([[1,2,3],[4,5,6],[7,8,9]]), (2, 2), 1, (1, 2), [
+        np.array([[2,3],[5,6]]), np.array([[4,5],[7,8]])
     ])
 ])
-def test_partition(x, shape, shift, expected):
-    output = [ p for p in partition(x, shape, shift=shift) ]
+def test_partition(x, shape, shift, reduced_idx, expected):
+    output = [ p for p in partition(x, shape, shift, reduced_idx) ]
     assert len(output) == len(expected)
     assert all([ np.array_equal(o, e) for o, e in zip(output, expected) ])
 
@@ -39,17 +44,6 @@ def test_partition(x, shape, shift, expected):
 ])
 def test_partition_ignore(x, shape, expected):
     output = [ p for p in partition_ignore(x, shape) ]
-    assert len(output) == len(expected)
-    assert all([ np.array_equal(o, e) for o, e in zip(output, expected) ])
-
-@pytest.mark.parametrize('x,shape,min_width,expected', [
-    (np.ones((2, 2)), (2, 2), 2, [ np.ones((2, 2)) ]),
-    (np.ones((5, 5)), (3, 3), 2, [
-        np.ones((3, 3)), np.ones((2, 2)), np.ones((2, 2)), np.ones((2, 2))
-    ])
-])
-def test_partition_shrink(x, shape, min_width, expected):
-    output = [ p for p in partition_shrink(x, shape, min_width=min_width) ]
     assert len(output) == len(expected)
     assert all([ np.array_equal(o, e) for o, e in zip(output, expected) ])
 
@@ -66,3 +60,24 @@ def test_lookup(parts, ctmbin2d, expected):
 def test_aggregate(ctms, expected):
     output = aggregate(ctms)
     assert output == expected
+
+
+class TestPipeline:
+
+    @classmethod
+    def setup_class(cls):
+        cls.bdm1 = BDM(ndim=1)
+        cls.bdm2 = BDM(ndim=2)
+
+    @pytest.mark.parametrize('data,shape,exp_ctms,exp_bdm', [
+        (np.ones((30, ), dtype=int), (12, ), [
+            ('111111111111', 1.95207842085224e-08),
+            ('111111111111', 1.95207842085224e-08),
+        ], 1.000000019520784)
+    ])
+    def test_pipeline_1d_ignore(self, data, shape, exp_ctms, exp_bdm):
+        parts = [ p for p in partition_ignore(data, shape) ]
+        ctms = [ x for x in lookup(parts, self.bdm1._ctm) ]
+        bdm = aggregate(ctms)
+        assert ctms == exp_ctms
+        assert bdm == exp_bdm

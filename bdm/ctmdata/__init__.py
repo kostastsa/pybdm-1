@@ -11,3 +11,8 @@ Datasets
 :``ctm-b2-d4x4.pickle``:
     Square binary matrices of width from 1 to 4.
 """
+
+CTM_DATASETS = [
+    'ctm-b2-d12.pickle',
+    'ctm-b2-d4x4.pickle'
+]
