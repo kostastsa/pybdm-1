@@ -22,6 +22,7 @@ be wrappers around the core family functions, which accordingly are:
 * :py:func:`bdm.stages.aggregate`
 """
 from collections import Counter
+from functools import reduce
 import numpy as np
 from .encoding import string_from_array
 from .utils import get_reduced_shape, get_reduced_idx
@@ -201,7 +202,6 @@ def lookup(parts, ctm, sep='-'):
             raise KeyError(f"CTM dataset does not contain object '{key}'")
         yield key, cmx
 
-
 def aggregate(ctms):
     """Combine CTM of parts into BDM value.
 
@@ -223,11 +223,27 @@ def aggregate(ctms):
     >>> parts = partition_ignore(data, (12, ))
     >>> ctms = lookup(parts, bdm._ctm)
     >>> aggregate(ctms)
-    1.000000019520784
+    Counter({('111111111111', 1.95207842085224e-08): 2})
     """
     counter = Counter()
     for key, ctm in ctms:
         counter.update([ (key, ctm) ])
+    return counter
+
+def compute_bdm(*counters):
+    """Compute BDM approximation.
+
+    Parameters
+    ----------
+    *counters :
+        Counter objects grouping object keys and occurences.
+
+    Returns
+    -------
+    float
+        Approximate algorithmic complexity.
+    """
+    counter = reduce(lambda x, y: x+y, counters)
     bdm = 0
     for key, n in counter.items():
         _, ctm = key

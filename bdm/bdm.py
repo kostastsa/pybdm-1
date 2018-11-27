@@ -11,7 +11,7 @@ is implemented in object-oriented fashion, an instance can be first configured
 properly and then it exposes a public method :py:meth:`bdm.BDM.complexity`
 for computing approximated complexity via BDM.
 """
-from .stages import partition_ignore, lookup, aggregate
+from .stages import partition_ignore, lookup, aggregate, compute_bdm
 from .utils import get_ctm_dataset
 
 
@@ -98,7 +98,34 @@ class BDM:
         self.lookup = lookup_func
         self.aggregate = aggregate_func
 
-    def complexity(self, x, raise_if_zero=True):
+    def count_and_lookup(self, x):
+        """Count parts and assign complexity values.
+
+        Parameters
+        ----------
+        x : array_like
+            Dataset representation as a :py:class:`numpy.ndarray`.
+            Number of axes must agree with the `ndim` attribute.
+
+        Returns
+        -------
+        collections.Counter
+            Lookup table mapping 2-tuples with string keys and CTM values
+            to numbers of occurences.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> bdm = BDM(ndim=1)
+        >>> bdm.count_and_lookup(np.ones((12, ), dtype=int))
+        Counter({('111111111111', 1.95207842085224e-08): 1})
+        """
+        parts = self.partition(x, self.ctm_shape)
+        ctms = self.lookup(parts, self._ctm)
+        counter = self.aggregate(ctms)
+        return counter
+
+    def bdm(self, x, raise_if_zero=True):
         """Approximate complexity of a dataset.
 
         Parameters
@@ -124,12 +151,11 @@ class BDM:
         --------
         >>> import numpy as np
         >>> bdm = BDM(ndim=2)
-        >>> bdm.complexity(np.ones((12, 12), dtype=int))
+        >>> bdm.bdm(np.ones((12, 12), dtype=int))
         25.176631293734488
         """
-        parts = self.partition(x, self.ctm_shape)
-        ctms = self.lookup(parts, self._ctm)
-        cmx = self.aggregate(ctms)
+        counter = self.count_and_lookup(x)
+        cmx = compute_bdm(counter)
         if raise_if_zero and cmx == 0:
             raise ValueError("Computed BDM is 0, dataset may have incorrect dimensions")
         return cmx

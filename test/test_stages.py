@@ -1,9 +1,10 @@
 """Unit tests for BDM stage functions."""
 # pylint: disable=E1101,W0621,W0212
+from collections import Counter
 import pytest
 import numpy as np
 from bdm import BDM
-from bdm.stages import partition, lookup, aggregate
+from bdm.stages import partition, lookup, aggregate, compute_bdm
 from bdm.stages import partition_ignore, partition_shrink
 from bdm.encoding import decode_string as dec
 from bdm.utils import get_ctm_dataset
@@ -63,7 +64,9 @@ def test_lookup(parts, ctmbin2d, expected):
     assert output == expected
 
 @pytest.mark.parametrize('ctms,expected', [
-    ([ (65535, 22.0067) for _ in range(4) ], 22.0067 + np.log2(4))
+    ([ (65535, 22.0067) for _ in range(4) ], Counter([
+        (65535, 22.0067), (65535, 22.0067), (65535, 22.0067), (65535, 22.0067)
+    ]))
 ])
 def test_aggregate(ctms, expected):
     output = aggregate(ctms)
@@ -86,6 +89,7 @@ class TestPipeline:
     def test_pipeline_1d_ignore(self, data, shape, exp_ctms, exp_bdm):
         parts = [ p for p in partition_ignore(data, shape) ]
         ctms = [ x for x in lookup(parts, self.bdm1._ctm) ]
-        bdm = aggregate(ctms)
+        counter = aggregate(ctms)
+        bdm = compute_bdm(counter)
         assert ctms == exp_ctms
         assert bdm == exp_bdm

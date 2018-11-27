@@ -22,10 +22,10 @@ class TestBDM:
         (array_from_string('000000000010'), 0.0996187277370206)
     ])
     def test_complexity_d1(self, bdm_d1, x, expected):
-        output = bdm_d1.complexity(x)
+        output = bdm_d1.bdm(x)
         assert output == expected
 
     @pytest.mark.parametrize('x,expected', bdm_test_input)
     def test_complexity_d2(self, bdm_d2, x, expected):
-        output = bdm_d2.complexity(x)
+        output = bdm_d2.bdm(x)
         assert output == expected
