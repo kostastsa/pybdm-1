@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 from bdm import BDM
 from bdm.stages import partition, lookup, aggregate
-from bdm.stages import partition_ignore
+from bdm.stages import partition_ignore, partition_shrink
 from bdm.encoding import decode_string as dec
 from bdm.utils import get_ctm_dataset
 
@@ -39,6 +39,19 @@ def test_partition(x, shape, shift, reduced_idx, expected):
 ])
 def test_partition_ignore(x, shape, expected):
     output = [ p for p in partition_ignore(x, shape) ]
+    assert len(output) == len(expected)
+    assert all([ np.array_equal(o, e) for o, e in zip(output, expected) ])
+
+@pytest.mark.parametrize('x,shape,min_length,expected', [
+    (np.ones((6, 6)), (4, 4), 2, [
+        np.ones((4, 4)), np.ones((2, 2)), np.ones((2, 2)),
+        np.ones((2, 2)), np.ones((2, 2)), np.ones((2, 2))
+    ]),
+    (np.ones((6, 6)), (4, 4), 3, [ np.ones((4, 4)) ]),
+    (np.ones((20, )), (12, ), 6, [ np.ones((12, )), np.ones((8, ))])
+])
+def test_partition_shrink(x, shape, min_length, expected):
+    output = [ p for p in partition_shrink(x, shape, min_length=min_length) ]
     assert len(output) == len(expected)
     assert all([ np.array_equal(o, e) for o, e in zip(output, expected) ])
 

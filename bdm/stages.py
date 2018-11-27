@@ -53,7 +53,7 @@ def partition(x, shape, shift=0, reduced_idx=None):
     Raises
     ------
     AttributeError
-        If parts' `shape` is equal in each dimension.
+        If parts' `shape` is not equal in each dimension.
         If parts' `shape` and dataset's shape have different numbers of axes.
 
     Examples
@@ -101,7 +101,7 @@ def partition_ignore(x, shape, reduced_idx=None):
     Raises
     ------
     AttributeError
-        If parts' `shape` is equal in each dimension.
+        If parts' `shape` is not equal in each dimension.
         If parts' `shape` and dataset's shape are not conformable.
 
     Examples
@@ -114,7 +114,50 @@ def partition_ignore(x, shape, reduced_idx=None):
         if part.shape == shape:
             yield part
 
-# TODO: implement partition_shrink in a non-recursive manner
+def partition_shrink(x, shape, min_length=2, reduced_idx=None):
+    """Partition stage function with a shrinking parts' size.
+
+    Parameters
+    ----------
+    x : array_like
+        Dataset of arbitrary dimensionality represented as a *Numpy* array.
+    shape : tuple
+        Dataset parts' shape.
+    min_dim_length : int
+        Minimum parts' length.
+        In case of multidimensional objects it specifies minimum
+        length of any single dimension.
+    reduced_idx : iterable or None
+        Reduced dataset 1D indexes to iterate over.
+        Useful when running partition in parallel.
+        Iterate over all parts if ``None``.
+
+    Yields
+    ------
+    array_like
+        Dataset parts.
+
+    Raises
+    ------
+    AttributeError
+        If parts' `shape` is not equal in each dimension.
+        If parts' `shape` and dataset's shape have different numbers of axes.
+
+    Examples
+    --------
+    >>> [ p for p in partition_shrink(np.ones(10, ), (6, ), min_length=4) ]
+    [array([1., 1., 1., 1., 1., 1.]), array([1., 1., 1., 1.])]
+    """
+    for part in partition(x, shape, shift=0, reduced_idx=reduced_idx):
+        if part.shape == shape:
+            yield part
+        else:
+            min_dim_length = min(part.shape)
+            if min_dim_length < min_length:
+                continue
+            shrinked_shape = tuple(min_dim_length for _ in range(len(shape)))
+            yield from partition(part, shrinked_shape, shift=0, reduced_idx=None)
+
 
 def lookup(parts, ctm, sep='-'):
     """Lookup CTM values for parts in a reference dataset.

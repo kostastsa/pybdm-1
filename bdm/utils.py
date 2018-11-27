@@ -43,7 +43,7 @@ def get_reduced_shape(x, shape, shift=0, length_only=True):
     Raises
     ------
     AttributeError
-        If parts' `shape` is equal in each dimension.
+        If parts' `shape` is not equal in each dimension.
         If parts' `shape` and dataset's shape have different numbers of axes.
 
     Examples
