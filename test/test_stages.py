@@ -1,23 +1,18 @@
 """Unit tests for BDM stage functions."""
 # pylint: disable=E1101,W0621,W0212
-import os
-import pickle
 import pytest
 import numpy as np
 from bdm import BDM
-from bdm.ctmdata import __path__ as ctmdata_path
 from bdm.stages import partition, lookup, aggregate
 from bdm.stages import partition_ignore
 from bdm.encoding import decode_string as dec
+from bdm.utils import get_ctm_dataset
 
 
 @pytest.fixture(scope='session')
 def ctmbin2d():
     """CTM reference dataset for 2D binary matrices."""
-    path = os.path.join(ctmdata_path[0], 'ctm-b2-d4x4.pickle')
-    with open(path, 'rb') as stream:
-        return pickle.load(stream)
-
+    return get_ctm_dataset('CTM-B2-D4x4')
 
 @pytest.mark.parametrize('x,shape,shift,reduced_idx,expected', [
     (np.ones((2, 2)), (2, 2), 0, None, [ np.ones((2, 2)) ]),

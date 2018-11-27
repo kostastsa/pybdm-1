@@ -11,10 +11,8 @@ is implemented in object-oriented fashion, an instance can be first configured
 properly and then it exposes a public method :py:meth:`bdm.BDM.complexity`
 for computing approximated complexity via BDM.
 """
-import pickle
-from pkg_resources import resource_stream
 from .stages import partition_ignore, lookup, aggregate
-from .ctmdata import __name__ as ctmdata_path
+from .utils import get_ctm_dataset
 
 
 _ndim_to_shape = {
@@ -22,8 +20,8 @@ _ndim_to_shape = {
     2: (4, 4)
 }
 _ndim_to_ctm = {
-    1: 'ctm-b2-d12.pickle',
-    2: 'ctm-b2-d4x4.pickle'
+    1: 'CTM-B2-D12',
+    2: 'CTM-B2-D4x4'
 }
 
 
@@ -92,13 +90,10 @@ class BDM:
                  lookup_func=lookup, aggregate_func=aggregate):
         """Initialization method."""
         self.ndim = ndim
-        if ctm_width is None:
-            self.ctm_shape = _ndim_to_shape[ndim]
-        else:
-            self.ctm_shape = tuple([ ctm_width for _ in range(ndim) ])
+        self.ctm_shape = _ndim_to_shape[ndim] if ctm_width is None \
+            else tuple([ ctm_width for _ in range(ndim) ])
         self.ctm_dname = _ndim_to_ctm[ndim] if ctm_dname is None else ctm_dname
-        with resource_stream(ctmdata_path, self.ctm_dname) as stream:
-            self._ctm = pickle.load(stream)
+        self._ctm = get_ctm_dataset(self.ctm_dname)
         self.partition = partition_func
         self.lookup = lookup_func
         self.aggregate = aggregate_func

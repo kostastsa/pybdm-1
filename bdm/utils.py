@@ -1,6 +1,9 @@
 """Utility functions."""
+import pickle
+from functools import lru_cache
+from pkg_resources import resource_stream
 import numpy as np
-from .ctmdata import CTM_DATASETS
+from .ctmdata import CTM_DATASETS as _ctm_datasets, __name__ as _ctmdata_path
 
 
 def list_ctm_datasets():
@@ -9,9 +12,9 @@ def list_ctm_datasets():
     Examples
     --------
     >>> list_ctm_datasets()
-    ['ctm-b2-d12.pickle', 'ctm-b2-d4x4.pickle']
+    ['CTM-B2-D12', 'CTM-B2-D4x4']
     """
-    return CTM_DATASETS
+    return [ x for x in sorted(_ctm_datasets.keys()) ]
 
 def get_reduced_shape(x, shape, shift=0, length_only=True):
     """Get shape of a reduced dataset.
@@ -94,3 +97,30 @@ def get_reduced_idx(i, shape):
         for k in range(K)
     )
     return r_idx
+
+@lru_cache(maxsize=2**int(np.ceil(np.log2(len(_ctm_datasets)))))
+def get_ctm_dataset(name):
+    """Get CTM dataset by name.
+
+    This function uses a global cache, so each CTM dataset
+    is loaded to the memory only once.
+
+    Parameters
+    ----------
+    name : str
+        Name of a dataset.
+
+    Returns
+    -------
+    dict
+        CTM lookup table.
+
+    Raises
+    ------
+    ValueError
+        If non-existent CTM dataset is requested.
+    """
+    if name not in _ctm_datasets:
+        raise ValueError(f"There is no {name} CTM dataset")
+    with resource_stream(_ctmdata_path, _ctm_datasets[name]) as stream:
+        return pickle.load(stream)

@@ -12,7 +12,7 @@ Datasets
     Square binary matrices of width from 1 to 4.
 """
 
-CTM_DATASETS = [
-    'ctm-b2-d12.pickle',
-    'ctm-b2-d4x4.pickle'
-]
+CTM_DATASETS = {
+    'CTM-B2-D12': 'ctm-b2-d12.pickle',
+    'CTM-B2-D4x4': 'ctm-b2-d4x4.pickle'
+}
